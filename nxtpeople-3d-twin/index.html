@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NxtPeople — 3D Infrastructure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #12141f;
+            color: #f0f2f8;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh
+        }
+
+        canvas {
+            display: block
+        }
+
+        .panel {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            width: 360px;
+            z-index: 10;
+            animation: slideIn .8s ease
+        }
+
+        .glass {
+            background: rgba(20, 22, 35, 0.92);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 18px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35)
+        }
+
+        .panel-header {
+            padding: 1.8rem 2rem 1.2rem
+        }
+
+        .panel-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6EE7B7, #3B82F6, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: .2rem
+        }
+
+        .panel-header .sub {
+            color: #8892b0;
+            font-size: .9rem;
+            font-weight: 300
+        }
+
+        .panel-section {
+            padding: 1rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05)
+        }
+
+        .panel-section h3 {
+            color: #6EE7B7;
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: .8rem
+        }
+
+        #node-info .name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: .2rem
+        }
+
+        #node-info .phase-tag {
+            display: inline-block;
+            font-size: .65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: .2rem .6rem;
+            border-radius: 20px;
+            background: rgba(110, 231, 183, 0.1);
+            color: #6EE7B7;
+            margin-bottom: .6rem
+        }
+
+        #node-info .desc {
+            color: #9ca3b8;
+            line-height: 1.6;
+            font-size: .86rem;
+            margin-bottom: .8rem
+        }
+
+        #node-info .hint {
+            color: #4a5068;
+            font-style: italic;
+            font-size: .85rem
+        }
+
+        #node-info .section-label {
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #93C5FD;
+            margin-bottom: .5rem;
+            margin-top: .6rem
+        }
+
+        #node-info .features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            margin-bottom: .8rem
+        }
+
+        #node-info .features li {
+            font-size: .82rem;
+            color: #8892b0;
+            padding: .35rem .7rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-radius: 8px;
+            border-left: 2px solid #93C5FD;
+            transition: background .2s
+        }
+
+        #node-info .features li:hover {
+            background: rgba(147, 197, 253, 0.06)
+        }
+
+        #node-info .features li .feat-icon {
+            margin-right: .4rem
+        }
+
+        #node-info .conn-list {
+            display: flex;
+            flex-direction: column;
+            gap: .3rem
+        }
+
+        #node-info .conn-item {
+            font-size: .78rem;
+            color: #8892b0;
+            padding: .3rem .6rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-radius: 8px;
+            border-left: 2px solid #F9A8D4;
+            transition: background .2s
+        }
+
+        #node-info .conn-item:hover {
+            background: rgba(249, 168, 212, 0.06)
+        }
+
+        .panel {
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #2a2d3d transparent
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 4px
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: #2a2d3d;
+            border-radius: 4px
+        }
+
+        .legend ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: .4rem
+        }
+
+        .legend li {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            font-size: .82rem;
+            color: #8892b0
+        }
+
+        .legend .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor
+        }
+
+        .phase-bar {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 10;
+            padding: 1.5rem;
+            width: 200px;
+            animation: slideIn .8s ease
+        }
+
+        .phase-bar h4 {
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6EE7B7;
+            margin-bottom: 1rem
+        }
+
+        .phase-step {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            margin-bottom: .8rem;
+            font-size: .82rem;
+            color: #555a70;
+            transition: all .3s
+        }
+
+        .phase-step.active {
+            color: #fff
+        }
+
+        .phase-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid #2a2d3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .7rem;
+            font-weight: 600;
+            transition: all .3s
+        }
+
+        .phase-step.active .phase-num {
+            background: #6EE7B7;
+            border-color: #6EE7B7;
+            color: #12141f;
+            font-weight: 700;
+            box-shadow: 0 0 14px rgba(110, 231, 183, 0.35)
+        }
+
+        .phase-connector {
+            width: 1px;
+            height: 14px;
+            background: #2a2d3d;
+            margin-left: 12px;
+            margin-bottom: .2rem
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: .7rem 1.6rem;
+            z-index: 10;
+            font-size: .75rem;
+            color: #555a70
+        }
+
+        .overview-btn {
+            display: none;
+            width: 100%;
+            padding: .7rem;
+            margin-top: .6rem;
+            border: 1px solid rgba(110, 231, 183, 0.2);
+            border-radius: 10px;
+            background: rgba(110, 231, 183, 0.06);
+            color: #6EE7B7;
+            font-family: 'Outfit', sans-serif;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .25s ease;
+            letter-spacing: .5px
+        }
+
+        .overview-btn:hover {
+            background: rgba(110, 231, 183, 0.14);
+            border-color: rgba(110, 231, 183, 0.4);
+            color: #a7f3d0;
+            box-shadow: 0 0 20px rgba(110, 231, 183, 0.1)
+        }
+
+        .overview-btn.visible {
+            display: block
+        }
+
+        .tour-start-btn {
+            padding: .65rem 1.4rem;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 10px;
+            background: rgba(167, 139, 250, 0.08);
+            color: #A78BFA;
+            font-family: 'Outfit', sans-serif;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .25s ease;
+            letter-spacing: .5px
+        }
+
+        .tour-start-btn:hover {
+            background: rgba(167, 139, 250, 0.16);
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.12)
+        }
+
+        .tour-bar {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            padding: 1rem 1.8rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            min-width: 500px
+        }
+
+        .tour-bar.active {
+            display: flex
+        }
+
+        .tour-step-counter {
+            font-size: .75rem;
+            color: #555a70;
+            white-space: nowrap
+        }
+
+        .tour-narration {
+            flex: 1;
+            font-size: .85rem;
+            color: #a0a8c0;
+            line-height: 1.4
+        }
+
+        .tour-narration strong {
+            color: #fff
+        }
+
+        .tour-btn {
+            padding: .5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: #8892b0;
+            font-family: 'Outfit', sans-serif;
+            font-size: .8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap
+        }
+
+        .tour-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff
+        }
+
+        .tour-btn.primary {
+            background: rgba(167, 139, 250, 0.12);
+            border-color: rgba(167, 139, 250, 0.25);
+            color: #A78BFA
+        }
+
+        .tour-btn.primary:hover {
+            background: rgba(167, 139, 250, 0.22)
+        }
+
+        .tour-btn.exit {
+            border-color: rgba(255, 100, 100, 0.2);
+            color: #ff6666
+        }
+
+        .tour-btn.exit:hover {
+            background: rgba(255, 100, 100, 0.06)
+        }
+
+        .tour-progress {
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 2px;
+            margin-top: .6rem
+        }
+
+        .tour-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #F472B6, #A78BFA, #6EE7B7);
+            border-radius: 2px;
+            transition: width .5s ease
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-15px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="panel glass">
+        <div class="panel-header">
+            <h1>NxtPeople</h1>
+            <p class="sub">Interactive Infrastructure Map</p>
+        </div>
+        <div class="panel-section">
+            <h3>Selected Module</h3>
+            <div id="node-info">
+                <p class="hint">Click any module to inspect it.</p>
+            </div>
+            <button id="overview-btn" class="overview-btn" onclick="window.resetOverview()">← Back to Overview</button>
+        </div>
+        <div class="panel-section legend">
+    <h3>Legend</h3>
+    <ul>
+      <li><span class="dot" style="color:#1D5CE5;background:#1D5CE5"></span> NxtPeople Hub</li>
+      <li><span class="dot" style="color:#CB3838;background:#CB3838"></span> NxtJob</li>
+      <li><span class="dot" style="color:#E03C8A;background:#E03C8A"></span> NxtCampaign</li>
+      <li><span class="dot" style="color:#498990;background:#498990"></span> NxtInsight</li>
+      <li><span class="dot" style="color:#E9AF44;background:#E9AF44"></span> NxtMatch</li>
+      <li><span class="dot" style="color:#44A0BE;background:#44A0BE"></span> NxtForm</li>
+      <li><span class="dot" style="color:#589E61;background:#589E61"></span> NxtPlan</li>
+      <li><span class="dot" style="color:#6D3A74;background:#6D3A74"></span> NxtPay</li>
+    </ul>
+  </div>
+        </div>
+    </div>
+
+    <div class="phase-bar glass">
+        <h4>Lifecycle</h4>
+        <div class="phase-step" data-phase="search"><span class="phase-num">1</span> Search</div>
+        <div class="phase-connector"></div>
+        <div class="phase-step" data-phase="match"><span class="phase-num">2</span> Match</div>
+        <div class="phase-connector"></div>
+        <div class="phase-step" data-phase="place"><span class="phase-num">3</span> Place</div>
+        <div class="phase-connector"></div>
+        <div class="phase-step" data-phase="plan"><span class="phase-num">4</span> Plan</div>
+        <div class="phase-connector"></div>
+        <div class="phase-step" data-phase="pay"><span class="phase-num">5</span> Pay</div>
+        <div class="phase-connector"></div>
+        <div class="phase-step" data-phase="insight"><span class="phase-num">6</span> Insight</div>
+    </div>
+
+    <div class="bottom-bar glass" id="bottom-default">
+        <span>Drag to rotate · Scroll to zoom · Click module to inspect · Right-click to pan
+            &nbsp;&nbsp;|&nbsp;&nbsp;</span>
+        <button class="tour-start-btn" style="margin-right:10px" onclick="window.startTour()">🎓 Start Guided Tour</button>
+        <button class="tour-start-btn" style="background:rgba(99, 102, 241, 0.15);border-color:#6366f1;color:#818cf8" onclick="window.startAutoDemo()">🎬 Auto-Play Demo</button>
+    </div>
+
+    <div class="tour-bar glass" id="tour-bar">
+        <button class="tour-btn exit" onclick="window.exitTour()">✕ Exit</button>
+        <span class="tour-step-counter" id="tour-counter">1 / 8</span>
+        <div class="tour-narration" id="tour-narration"></div>
+        <button class="tour-btn" id="tour-prev" onclick="window.tourPrev()">← Prev</button>
+        <button class="tour-btn primary" id="tour-next" onclick="window.tourNext()">Next →</button>
+    </div>
+
+    <script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"}}
+</script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // ── Scene ──
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x12141f, 0.0006);
+        const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 2000);
+        camera.position.set(0, 180, 350);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        document.body.appendChild(renderer.domElement);
+
+        // Bloom post-processing
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        // Lowered bloom strength and increased threshold so white labels don't get blown out
+        const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.2, 0.90);
+        composer.addPass(bloom);
+
+        const ctrl = new OrbitControls(camera, renderer.domElement);
+        ctrl.enableDamping = true;
+        ctrl.dampingFactor = 0.06;
+        ctrl.minDistance = 100;
+        ctrl.maxDistance = 600;
+        ctrl.target.set(0, 30, 0);
+
+        // ── Lights ──
+        scene.add(new THREE.AmbientLight(0x2a2d44, 3));
+        const dl = new THREE.DirectionalLight(0xeef0ff, 2);
+        dl.position.set(60, 120, 80);
+        scene.add(dl);
+        const pl1 = new THREE.PointLight(0xF472B6, 1.2, 500);
+        pl1.position.set(-120, 80, -60);
+        scene.add(pl1);
+        const pl2 = new THREE.PointLight(0x6EE7B7, 1.2, 500);
+        pl2.position.set(120, 50, 80);
+        scene.add(pl2);
+        const pl3 = new THREE.PointLight(0x93C5FD, 0.8, 400);
+        pl3.position.set(0, -20, 0);
+        scene.add(pl3);
+
+        // ── Grid ──
+        const grid = new THREE.GridHelper(800, 40, 0x1e2030, 0x1e2030);
+        grid.position.y = -35;
+        grid.material.opacity = 0.25;
+        grid.material.transparent = true;
+        scene.add(grid);
+
+        // ── Background Network (HR Candidate Pool) ──
+const sGeo = new THREE.BufferGeometry();
+const sPos = new Float32Array(400*3);
+for(let i=0;i<sPos.length;i++) sPos[i]=(Math.random()-0.5)*1200;
+sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+const bgNodes = new THREE.Points(sGeo, new THREE.PointsMaterial({color:0x3B7DDD, size:1.5, transparent:true, opacity:0.4}));
+scene.add(bgNodes);
+
+const lineGeo = new THREE.BufferGeometry();
+const linePos = [];
+for(let i=0; i<400; i++) {
+  const x1 = sPos[i*3], y1 = sPos[i*3+1], z1 = sPos[i*3+2];
+  let conns = 0;
+  for(let j=i+1; j<400; j++) {
+    const x2 = sPos[j*3], y2 = sPos[j*3+1], z2 = sPos[j*3+2];
+    const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2);
+    if(dist < 120) {
+      linePos.push(x1, y1, z1, x2, y2, z2);
+      conns++;
+      if(conns >= 3) break;
+    }
+  }
+}
+lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+const bgLines = new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({color: 0x4a7a9a, transparent: true, opacity: 0.1}));
+scene.add(bgLines);
+
+const bgGroup = new THREE.Group();
+bgGroup.add(bgNodes);
+bgGroup.add(bgLines);
+scene.add(bgGroup);
+
+        // ── Data ──
+const MODULES = [
+  {name:"NxtPeople", phase:"hub", pos:[0,40,0], color:0x1D5CE5, r:13,
+   desc:"The central platform hub — the unified data backbone that connects every module in the NxtPeople ecosystem. All candidate, vacancy, and operational data flows through this core.",
+   features:["🔗 Unified API connecting all modules","👥 Centralized candidate & client database","🔐 Role-based access control (RBAC)","📊 Single source of truth for all data","⚡ Real-time event bus between services"]},
+
+  {name:"NxtCampaign", phase:"search", pos:[-110,75,-50], color:0xE03C8A, r:8,
+   desc:"Automated recruitment marketing engine. Builds multi-channel campaigns via email, SMS, QR codes, and social media to attract talent at scale.",
+   features:["📧 Automated email drip sequences","📱 SMS & WhatsApp outreach","📎 QR code campaign generation","🎯 Audience segmentation & targeting","📈 A/B testing & conversion tracking"]},
+
+  {name:"NxtJob", phase:"search", pos:[-65,85,70], color:0xCB3838, r:8,
+   desc:"AI-powered job posting tool. Creates optimized vacancy descriptions and publishes across 200+ job boards simultaneously.",
+   features:["🤖 AI-generated job descriptions","🌐 Multi-board publishing (200+ boards)","✏️ Template library & brand styling","📊 Board performance analytics","🔄 Auto-sync vacancy status"]},
+
+  {name:"NxtForm", phase:"place", pos:[-20,95,-65], color:0x44A0BE, r:8,
+   desc:"Smart data collection platform. Mobile-first application forms, document uploads, surveys, and legally binding e-signatures.",
+   features:["📋 Drag & drop form builder","📱 Mobile-first responsive design","✍️ Legally binding e-signatures","📄 Document upload & verification","🔁 Conditional logic & branching"]},
+
+  {name:"NxtMatch", phase:"match", pos:[55,90,45], color:0xE9AF44, r:9,
+   desc:"AI matching engine powered by an intelligent ontology. Automatically screens, scores, and shortlists candidates against job criteria.",
+   features:["🧠 AI-powered matching ontology","📑 Automatic CV parsing & scoring","📋 Smart shortlisting & ranking","🔍 Advanced candidate search filters","🏊 Candidate pool management"]},
+
+  {name:"NxtPlan", phase:"plan", pos:[120,65,-35], color:0x589E61, r:9,
+   desc:"Workforce scheduling & management. Handles shift planning, availability tracking, last-minute replacements, and includes a mobile employee app.",
+   features:["📅 Drag & drop shift scheduling","📱 Employee mobile app","🔄 Real-time availability tracking","⚠️ Automatic replacement suggestions","👥 Team & department management"]},
+
+  {name:"NxtPay", phase:"pay", pos:[85,25,85], color:0x6D3A74, r:8,
+   desc:"Payroll & invoicing engine. Processes approved timesheets, calculates wages, handles tax compliance, and generates client invoices.",
+   features:["💰 Automated wage calculation","🧾 Client invoice generation","📊 Tax & compliance handling","⏱️ Timesheet approval workflow","🏦 Multi-currency support"]},
+
+  {name:"NxtInsight", phase:"insight", pos:[0,0,-95], color:0x498990, r:8,
+   desc:"Real-time BI & analytics dashboard. Tracks recruitment KPIs, campaign ROI, labor costs, and provides actionable business intelligence.",
+   features:["📊 Real-time KPI dashboards","💼 Recruitment funnel analytics","💰 Labor cost forecasting","📈 Campaign ROI tracking","📋 Custom report builder"]},
+];
+
+        const CONNECTIONS = [
+            { from: "NxtPeople", to: "NxtCampaign", label: "Drives campaigns", hub: true },
+            { from: "NxtPeople", to: "NxtJob", label: "Manages vacancies", hub: true },
+            { from: "NxtPeople", to: "NxtForm", label: "Collects data", hub: true },
+            { from: "NxtPeople", to: "NxtMatch", label: "AI matching engine", hub: true },
+            { from: "NxtPeople", to: "NxtPlan", label: "Scheduling backbone", hub: true },
+            { from: "NxtPeople", to: "NxtPay", label: "Payroll pipeline", hub: true },
+            { from: "NxtPeople", to: "NxtInsight", label: "Analytics feed", hub: true },
+            { from: "NxtCampaign", to: "NxtForm", label: "Drives applicants to forms" },
+            { from: "NxtJob", to: "NxtMatch", label: "Vacancies fed for AI matching" },
+            { from: "NxtForm", to: "NxtMatch", label: "Candidate CVs & profiles" },
+            { from: "NxtMatch", to: "NxtPlan", label: "Placed candidates → shifts" },
+            { from: "NxtPlan", to: "NxtPay", label: "Timesheets trigger payroll" },
+            { from: "NxtMatch", to: "NxtInsight", label: "Matching quality metrics" },
+            { from: "NxtPlan", to: "NxtInsight", label: "Labor cost analytics" },
+            { from: "NxtPay", to: "NxtInsight", label: "Financial reporting data" },
+            { from: "NxtCampaign", to: "NxtInsight", label: "Campaign performance" },
+        ];
+
+        // ── Build Nodes ──
+        const nodeMap = {};
+        const clickTargets = [];
+
+        function makeLabel(text, color) {
+            const c = document.createElement('canvas');
+            const x = c.getContext('2d');
+            c.width = 512; c.height = 100;
+
+            if (text === "NxtPeople") {
+                // Slightly off-white background to avoid extreme bloom blowout
+                x.fillStyle = 'rgba(215, 220, 225, 0.98)';
+                roundRect(x, 0, 0, 512, 100, 16); x.fill();
+                x.strokeStyle = '#1D5CE5';
+                x.lineWidth = 2;
+                roundRect(x, 0, 0, 512, 100, 16); x.stroke();
+
+                x.font = 'bold 58px Outfit, sans-serif';
+                const w1 = x.measureText('nxt').width;
+                const w2 = 32; // Custom chevron space
+                const w3 = x.measureText('people').width;
+                const gap = 4;
+                const totalW = w1 + w2 + w3 + gap + 16;
+                let startX = (512 - totalW) / 2;
+
+                // "nxt"
+                x.fillStyle = '#0f172a';
+                x.textBaseline = 'middle';
+                x.textAlign = 'left';
+                x.fillText('nxt', startX, 52);
+
+                // Custom Chevron ">"
+                x.beginPath();
+                x.moveTo(startX + w1 + 8, 30);
+                x.lineTo(startX + w1 + 24, 48);
+                x.lineTo(startX + w1 + 8, 66);
+                x.lineWidth = 8;
+                x.lineCap = 'square';
+                x.lineJoin = 'miter';
+                x.strokeStyle = '#1D5CE5';
+                x.stroke();
+
+                // "people"
+                x.fillStyle = '#0f172a';
+                x.fillText('people', startX + w1 + w2 + gap, 52);
+
+                // Dot "."
+                x.fillStyle = '#1D5CE5';
+                x.beginPath();
+                x.arc(startX + w1 + w2 + gap + w3 + 12, 64, 7, 0, Math.PI * 2);
+                x.fill();
+
+            } else {
+                x.fillStyle = 'rgba(6,10,20,0.9)';
+                roundRect(x, 0, 0, 512, 100, 16); x.fill();
+                x.strokeStyle = '#' + color.toString(16).padStart(6, '0');
+                x.lineWidth = 2;
+                roundRect(x, 0, 0, 512, 100, 16); x.stroke();
+                x.font = '600 44px Outfit, sans-serif';
+                x.fillStyle = '#fff';
+                x.textAlign = 'center';
+                x.textBaseline = 'middle';
+                x.fillText(text, 256, 52);
+            }
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.minFilter = THREE.LinearFilter;
+            // depthTest enabled to prevent labels from rendering over everything when camera is close
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true }));
+            sp.scale.set(26, 5, 1);
+            return sp;
+        }
+
+        function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); }
+
+        MODULES.forEach(m => {
+            const g = new THREE.Group();
+            g.position.set(...m.pos);
+
+            // Core sphere
+            const core = new THREE.Mesh(
+                new THREE.SphereGeometry(m.r, 32, 32),
+                new THREE.MeshStandardMaterial({ color: m.color, emissive: m.color, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0.85, transparent: true, opacity: 0.93 })
+            );
+            g.add(core);
+
+            // Wireframe shell
+            const shell = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(m.r * 1.55, 1),
+                new THREE.MeshBasicMaterial({ color: m.color, wireframe: true, transparent: true, opacity: 0.1 })
+            );
+            g.add(shell);
+
+            // Orbit ring
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(m.r * 1.8, 0.2, 8, 64),
+                new THREE.MeshBasicMaterial({ color: m.color, transparent: true, opacity: 0.15 })
+            );
+            ring.rotation.x = Math.PI / 2;
+            g.add(ring);
+
+            // Second ring (cross axis)
+            const ring2 = ring.clone();
+            ring2.rotation.x = Math.PI / 3;
+            ring2.rotation.z = Math.PI / 4;
+            g.add(ring2);
+
+            // Label
+            const label = makeLabel(m.name, m.color);
+            label.position.y = -(m.r + 10);
+            g.add(label);
+
+            scene.add(g);
+            nodeMap[m.name] = { g, core, shell, ring, ring2, data: m };
+            clickTargets.push({ mesh: core, data: m });
+        });
+
+        // ── Build Connections ──
+        const conns = [];
+
+        CONNECTIONS.forEach(c => {
+            const a = nodeMap[c.from], b = nodeMap[c.to];
+            if (!a || !b) return;
+            const s = new THREE.Vector3(...a.data.pos);
+            const e = new THREE.Vector3(...b.data.pos);
+            const mid = s.clone().add(e).multiplyScalar(0.5);
+            const dir = new THREE.Vector3().subVectors(e, s);
+            const perp = new THREE.Vector3(-dir.z, Math.abs(dir.y) * 0.3 + 5, dir.x).normalize();
+            mid.add(perp.multiplyScalar(dir.length() * 0.18));
+
+            const curve = new THREE.QuadraticBezierCurve3(s, mid, e);
+            const pts = curve.getPoints(60);
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            const fromMod = MODULES.find(m => m.name === c.from);
+            const col = fromMod ? fromMod.color : 0xaaaaaa;
+            const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: c.hub ? 0.2 : 0.45 }));
+            scene.add(line);
+
+            // Multiple particles per connection
+            const particles = [];
+            const count = c.hub ? 1 : 2;
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(c.hub ? 0.8 : 1.2, 8, 8),
+                    new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9 })
+                );
+                scene.add(p);
+                particles.push({ mesh: p, offset: i / count });
+            }
+            conns.push({ curve, particles, speed: 0.15 + Math.random() * 0.15, data: c, line });
+        });
+
+        // ── Click handler ──
+        const ray = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const info = document.getElementById('node-info');
+        const phaseSteps = document.querySelectorAll('.phase-step');
+
+        renderer.domElement.addEventListener('click', ev => {
+            mouse.x = (ev.clientX / innerWidth) * 2 - 1;
+            mouse.y = -(ev.clientY / innerHeight) * 2 + 1;
+            ray.setFromCamera(mouse, camera);
+            const hits = ray.intersectObjects(clickTargets.map(t => t.mesh));
+            if (hits.length) {
+                const hit = clickTargets.find(t => t.mesh === hits[0].object);
+                if (!hit) return;
+                const d = hit.data;
+                const cc = '#' + d.color.toString(16).padStart(6, '0');
+
+                // Phase label map
+                const phaseLabels = { hub: 'Central Hub', search: 'Phase 1 · Search', match: 'Phase 2 · Match', place: 'Phase 3 · Place', plan: 'Phase 4 · Plan', pay: 'Phase 5 · Pay', insight: 'Phase 6 · Insight' };
+
+                // Features list
+                const featHtml = (d.features || []).map(f => `<li>${f}</li>`).join('');
+
+                // Connections for this module
+                const related = CONNECTIONS.filter(c => c.from === d.name || c.to === d.name);
+                const connHtml = related.filter(c => !c.hub).map(c => {
+                    const other = c.from === d.name ? c.to : c.from;
+                    const arrow = c.from === d.name ? '→' : '←';
+                    return `<div class="conn-item">${arrow} <strong>${other}</strong> — ${c.label}</div>`;
+                }).join('');
+
+                info.innerHTML = `
+      <p class="name" style="color:${cc}">${d.name}</p>
+      <span class="phase-tag">${phaseLabels[d.phase] || d.phase}</span>
+      <p class="desc">${d.desc}</p>
+      <p class="section-label">Key Capabilities</p>
+      <ul class="features">${featHtml}</ul>
+      <p class="section-label">Data Connections</p>
+      <div class="conn-list">${connHtml || '<div style="font-size:.8rem;color:#3a4255">Hub-only connections</div>'}</div>
+    `;
+
+                // Highlight phase in sidebar
+                phaseSteps.forEach(s => s.classList.toggle('active', s.dataset.phase === d.phase));
+
+                // Pulse clicked node
+                const node = nodeMap[d.name];
+                node.core.material.emissiveIntensity = 2.0;
+                setTimeout(() => { node.core.material.emissiveIntensity = 0.5 }, 2000);
+
+                // Highlight related connections, dim others
+                conns.forEach(cn => {
+                    const isRelated = cn.data.from === d.name || cn.data.to === d.name;
+                    cn.line.material.opacity = isRelated ? 0.8 : 0.04;
+                });
+                setTimeout(() => {
+                    conns.forEach(cn => { cn.line.material.opacity = cn.data.hub ? 0.15 : 0.3; });
+                }, 4000);
+
+                // Smooth camera zoom to the clicked node
+                const target = new THREE.Vector3(...d.pos);
+                const dist = 60;
+                const camDir = camera.position.clone().sub(target).normalize();
+                const newCamPos = target.clone().add(camDir.multiplyScalar(dist));
+                const startCam = camera.position.clone();
+                const startTarget = ctrl.target.clone();
+                const zoomStart = performance.now();
+                const zoomDur = 1200;
+                function zoomAnim(now) {
+                    const p = Math.min((now - zoomStart) / zoomDur, 1);
+                    const ease = 1 - Math.pow(1 - p, 3);
+                    camera.position.lerpVectors(startCam, newCamPos, ease);
+                    ctrl.target.lerpVectors(startTarget, target, ease);
+                    if (p < 1) requestAnimationFrame(zoomAnim);
+                }
+                requestAnimationFrame(zoomAnim);
+
+                // Show overview button
+                document.getElementById('overview-btn').classList.add('visible');
+            }
+        });
+
+        // ── Animate ──
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            Object.values(nodeMap).forEach(({ shell, ring, ring2, core }, i) => {
+                shell.rotation.y = t * 0.15 + i;
+                shell.rotation.x = t * 0.1 + i * 0.5;
+                ring.rotation.z = t * 0.25 + i;
+                ring2.rotation.y = t * 0.2 + i * 0.7;
+                const s = 1 + Math.sin(t * 1.2 + i * 1.8) * 0.03;
+                core.scale.set(s, s, s);
+            });
+
+            conns.forEach(cg => {
+                // If tour is active, speed up particles on the active module's connections to emphasize data flow
+                const speedMult = cg.isActive ? 0.25 : 0.08;
+                cg.particles.forEach(p => {
+                    const prog = (p.offset + t * cg.speed * speedMult) % 1;
+                    const pt = cg.curve.getPoint(prog);
+                    p.mesh.position.copy(pt);
+                    p.mesh.material.opacity = 0.4 + Math.sin(t * 3 + p.offset * 6) * 0.4;
+                });
+            });
+
+            bgGroup.rotation.y = t * 0.02;
+            bgGroup.rotation.x = t * 0.01;
+
+            ctrl.update();
+            composer.render();
+        }
+        animate();
+
+        // ── Intro camera animation ──
+        const startPos = { x: 0, y: 300, z: 500 };
+        const endPos = { x: 0, y: 180, z: 350 };
+        const duration = 2500;
+        const startTime = performance.now();
+        function introAnim(now) {
+            const p = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - p, 3); // easeOutCubic
+            camera.position.x = startPos.x + (endPos.x - startPos.x) * ease;
+            camera.position.y = startPos.y + (endPos.y - startPos.y) * ease;
+            camera.position.z = startPos.z + (endPos.z - startPos.z) * ease;
+            if (p < 1) requestAnimationFrame(introAnim);
+        }
+        requestAnimationFrame(introAnim);
+
+        // ── Overview reset ──
+        const overviewCamPos = new THREE.Vector3(0, 180, 350);
+        const overviewTarget = new THREE.Vector3(0, 30, 0);
+
+        window.resetOverview = function () {
+            const startCam = camera.position.clone();
+            const startTarget = ctrl.target.clone();
+            const zStart = performance.now();
+            const zDur = 1500;
+            function zAnim(now) {
+                const p = Math.min((now - zStart) / zDur, 1);
+                const ease = 1 - Math.pow(1 - p, 3);
+                camera.position.lerpVectors(startCam, overviewCamPos, ease);
+                ctrl.target.lerpVectors(startTarget, overviewTarget, ease);
+                if (p < 1) requestAnimationFrame(zAnim);
+            }
+            requestAnimationFrame(zAnim);
+
+            // Reset UI
+            info.innerHTML = '<p class="hint">Click any module to inspect it.</p>';
+            document.getElementById('overview-btn').classList.remove('visible');
+            phaseSteps.forEach(s => s.classList.remove('active'));
+            conns.forEach(cn => { 
+                cn.line.material.opacity = cn.data.hub ? 0.15 : 0.3; 
+                cn.isActive = false;
+            });
+            Object.values(nodeMap).forEach(n => { n.core.material.emissiveIntensity = 0.5; });
+        };
+
+        // ── Guided Tour ──
+        const TOUR_STEPS = [
+            { module: "NxtPeople", narration: "<strong>Welcome!</strong> This is the <strong>NxtPeople Hub</strong> — the central backbone of the entire platform. Every module connects through here. All candidate, vacancy, and operational data is unified in one place." },
+            { module: "NxtJob", narration: "<strong>Step 1 — Vacancies.</strong> We start with <strong>NxtJob</strong>. It uses AI to generate job descriptions and publishes them across 200+ job boards to create demand." },
+            { module: "NxtCampaign", narration: "<strong>Step 2 — Attraction.</strong> In parallel, <strong>NxtCampaign</strong> runs multi-channel outreach via email, SMS, and QR codes to proactively attract talent." },
+            { module: "NxtForm", narration: "<strong>Step 3 — Collection.</strong> Candidates apply via <strong>NxtForm</strong> — smart mobile forms where they submit CVs, sign documents, and complete intake surveys." },
+            { module: "NxtMatch", narration: "<strong>Step 4 — Matching.</strong> Now the magic happens. <strong>NxtMatch</strong> uses an AI ontology to screen, score, and rank candidates against the vacancies created in Step 1." },
+            { module: "NxtPlan", narration: "<strong>Step 5 — Scheduling.</strong> Once candidates are placed, <strong>NxtPlan</strong> takes over. Managers schedule shifts, and employees check their rosters via the mobile app." },
+            { module: "NxtPay", narration: "<strong>Step 6 — Payroll.</strong> After shifts are worked, <strong>NxtPay</strong> processes timesheets, calculates wages, ensures tax compliance, and generates client invoices." },
+            { module: "NxtInsight", narration: "<strong>Step 7 — Analytics.</strong> Finally, <strong>NxtInsight</strong> aggregates data from the entire lifecycle into real-time dashboards for business intelligence." },
+        ];
+
+        let tourActive = false;
+        let tourStep = 0;
+        let autoDemoTimer = null;
+        let isAutoPlay = false;
+
+        function animateCamTo(targetPos, dur = 1800) {
+            const target = new THREE.Vector3(...targetPos);
+            const dist = 60;
+            const camDir = camera.position.clone().sub(target).normalize();
+            camDir.y = Math.max(camDir.y, 0.5); // Ensure camera looks slightly down
+            camDir.normalize();
+            
+            const newCamPos = target.clone().add(camDir.multiplyScalar(dist));
+            const startCam = camera.position.clone();
+            const startTarget = ctrl.target.clone();
+            
+            // Calculate a midpoint for the sweeping arc (zooms out in the middle)
+            const midCamPos = new THREE.Vector3(
+                (startCam.x + newCamPos.x) / 2,
+                Math.max(startCam.y, newCamPos.y) + 120, // zoom out vertically
+                (startCam.z + newCamPos.z) / 2 + 80
+            );
+
+            const zoomStart = performance.now();
+            function zAnim(now) {
+                const p = Math.min((now - zoomStart) / dur, 1);
+                
+                // Smooth easing
+                const t = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+                
+                // Quadratic Bezier interpolation for the arc
+                const omt = 1 - t;
+                camera.position.x = omt * omt * startCam.x + 2 * omt * t * midCamPos.x + t * t * newCamPos.x;
+                camera.position.y = omt * omt * startCam.y + 2 * omt * t * midCamPos.y + t * t * newCamPos.y;
+                camera.position.z = omt * omt * startCam.z + 2 * omt * t * midCamPos.z + t * t * newCamPos.z;
+                
+                ctrl.target.lerpVectors(startTarget, target, t);
+                
+                if (p < 1) requestAnimationFrame(zAnim);
+            }
+            requestAnimationFrame(zAnim);
+        }
+
+        function showTourStep() {
+            const step = TOUR_STEPS[tourStep];
+            const mod = MODULES.find(m => m.name === step.module);
+            const cc = '#' + mod.color.toString(16).padStart(6, '0');
+
+            // Update tour bar
+            document.getElementById('tour-counter').textContent = `${tourStep + 1} / ${TOUR_STEPS.length}`;
+            document.getElementById('tour-narration').innerHTML = step.narration;
+            document.getElementById('tour-prev').style.visibility = tourStep === 0 ? 'hidden' : 'visible';
+            document.getElementById('tour-next').textContent = tourStep === TOUR_STEPS.length - 1 ? '✓ Finish' : 'Next →';
+
+            // Update progress bar
+            const progressEl = document.getElementById('tour-progress');
+            if (progressEl) progressEl.style.width = `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`;
+
+            // Highlight phase
+            phaseSteps.forEach(s => s.classList.toggle('active', s.dataset.phase === mod.phase));
+
+            // Highlight connections (and flag as active for accelerated particle flow)
+            conns.forEach(cn => {
+                const isRelated = cn.data.from === mod.name || cn.data.to === mod.name;
+                cn.line.material.opacity = isRelated ? 0.8 : 0.04;
+                cn.isActive = isRelated;
+            });
+
+            // Pulse node, dim others
+            Object.values(nodeMap).forEach(n => { n.core.material.emissiveIntensity = 0.2; });
+            nodeMap[mod.name].core.material.emissiveIntensity = 2.0;
+
+            // Update info panel
+            const phaseLabels = { hub: 'Central Hub', search: 'Phase 1 · Search', match: 'Phase 2 · Match', place: 'Phase 3 · Place', plan: 'Phase 4 · Plan', pay: 'Phase 5 · Pay', insight: 'Phase 6 · Insight' };
+            const featHtml = (mod.features || []).map(f => `<li>${f}</li>`).join('');
+            info.innerHTML = `
+    <p class="name" style="color:${cc}">${mod.name}</p>
+    <span class="phase-tag">${phaseLabels[mod.phase] || mod.phase}</span>
+    <p class="desc">${mod.desc}</p>
+    <p class="section-label">Key Capabilities</p>
+    <ul class="features">${featHtml}</ul>
+  `;
+
+            // Zoom camera
+            animateCamTo(mod.pos);
+        }
+
+        window.startTour = function () {
+            tourActive = true;
+            tourStep = 0;
+            document.getElementById('bottom-default').style.display = 'none';
+            document.getElementById('tour-bar').classList.add('active');
+            document.getElementById('overview-btn').classList.remove('visible');
+            showTourStep();
+        };
+
+        window.startAutoDemo = function () {
+            isAutoPlay = true;
+            window.startTour();
+            document.getElementById('tour-prev').style.display = 'none';
+            document.getElementById('tour-next').style.display = 'none';
+            document.querySelector('.tour-btn.exit').textContent = '⏹ Stop Demo';
+            
+            autoDemoTimer = setInterval(() => {
+                if (tourStep >= TOUR_STEPS.length - 1) { 
+                    window.exitTour(); 
+                } else {
+                    tourStep++;
+                    showTourStep();
+                    document.getElementById('tour-prev').style.display = 'none';
+                    document.getElementById('tour-next').style.display = 'none';
+                }
+            }, 6000);
+        };
+
+        window.tourNext = function () {
+            if (tourStep >= TOUR_STEPS.length - 1) { window.exitTour(); return; }
+            tourStep++;
+            showTourStep();
+        };
+
+        window.tourPrev = function () {
+            if (tourStep <= 0) return;
+            tourStep--;
+            showTourStep();
+        };
+
+        window.exitTour = function () {
+            tourActive = false;
+            clearInterval(autoDemoTimer);
+            isAutoPlay = false;
+            
+            document.getElementById('tour-prev').style.display = 'inline-block';
+            document.getElementById('tour-next').style.display = 'inline-block';
+            document.querySelector('.tour-btn.exit').textContent = '✕ Exit';
+
+            document.getElementById('bottom-default').style.display = 'block';
+            document.getElementById('tour-bar').classList.remove('active');
+            window.resetOverview();
+        };
+
+        // ── Resize ──
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        });
+    </script>
+</body>
+
+</html>
